@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE and operating system
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Generated result images
+results/*.png
+results/*.jpg
+results/*.jpeg
+results/*.webp
+!results/.gitkeep
+
+# Member-generated outputs
+members/*/kmeans_results/*
+members/*/threshold_results/*
+members/*/watershed_results/*
+!members/*/kmeans_results/.gitkeep
+!members/*/threshold_results/.gitkeep
+!members/*/watershed_results/.gitkeep
+
+# Large media and archives
+*.mp4
+*.avi
+*.zip
+*.rar
+*.7z
+
+# Jupyter and logs
+.ipynb_checkpoints/
+*.log
