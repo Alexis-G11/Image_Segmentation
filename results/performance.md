@@ -1,0 +1,19 @@
+| Image | Method | Time (ms) | Regions | Source |
+|---|---|---|---|---|
+| apple.jpg | K-means (K=3) | nan | 0 | real |
+| apple.jpg | Otsu threshold | 0.14 | 2 | mock |
+| apple.jpg | Watershed | 1.92 | 0 | mock |
+| colored_balls.jpg | K-means (K=3) | nan | 0 | real |
+| colored_balls.jpg | Otsu threshold | 0.06 | 2 | mock |
+| colored_balls.jpg | Watershed | 0.98 | 0 | mock |
+| orange.jpg | K-means (K=3) | nan | 0 | real |
+| orange.jpg | Otsu threshold | 0.07 | 2 | mock |
+| orange.jpg | Watershed | 1.00 | 0 | mock |
+
+**Average time per method**
+
+| Method | Mean time (ms) |
+|---|---|
+| K-means (K=3) | nan |
+| Otsu threshold | 0.09 |
+| Watershed | 1.30 |
