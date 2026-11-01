@@ -161,15 +161,18 @@ All methods run through one class, `ImageSegmentationStudio`.
 - A failure in one method is reported without stopping the others.
 - Temporary mock methods allowed the system to be built before the algorithms were ready. Any mock output is labelled `[MOCK result]`, and no mock output is used in the final results.
 
+**Browser interface.** A small Flask application lets a user choose an image or upload one, select a method and adjust its options in the browser, with the result updating each time. The options are K for K-means; Otsu or a manual threshold, plus Gaussian blur, for thresholding; and smoothing, marker strictness and smallest region for watershed. A compare mode shows all three methods side by side with their times and region counts. It runs locally and needs no internet connection.
+
 ## 7. Testing
 
-The automated test suite has 35 tests, all passing. It covers:
+The automated test suite has 53 tests, all passing. The dataset, expected behaviour and test cases are described in `docs/test_plan.md`. The tests cover:
 
 - Every method returning output of the correct size on all three shared images.
 - Every output being convertible to a displayable image.
 - Watershed separating touching discs and rejecting invalid input.
 - Otsu output being binary and K-means using K colours.
 - The studio using only real methods, surviving a failing method and saving all expected files.
+- The browser interface running every method, applying its options, and rejecting bad requests and files.
 
 Accuracy was not measured numerically, because the images have no hand-labelled ground truth. Quality was judged by visual inspection, as described in each results section.
 

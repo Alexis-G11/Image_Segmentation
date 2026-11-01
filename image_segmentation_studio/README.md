@@ -24,13 +24,25 @@ pip install -r requirements.txt
 
 | Command | What it does |
 |---|---|
+| `python app.py` | Starts the browser interface at <http://127.0.0.1:5050> |
 | `python demo.py --no-show` | Processes every image in `tests/test_images/` and saves the results |
 | `python demo.py --image tests/test_images/apple.jpg` | Processes one image and opens the comparison window |
 | `python demo.py --synthetic --no-show` | Uses a generated image, so no files are needed |
 | `python demo_thresholding.py` | Compares Otsu, Otsu with blur and manual thresholding |
 | `python -m pytest tests -q` | Runs all tests |
 
-By default, results are saved to `results/` at the repository root: one folder per image, plus `performance.csv` and `performance.md`.
+By default, `demo.py` saves results to `results/` at the repository root: one folder per image, plus `performance.csv` and `performance.md`.
+
+## Browser interface
+
+Choose a shared image or upload your own, pick a method, and the result updates as you adjust its options. It runs only on your computer and needs no internet connection.
+
+| Method | Options |
+|---|---|
+| K-means | Number of clusters (K) |
+| Thresholding | Otsu or manual threshold, threshold value, Gaussian blur and its size |
+| Watershed | Smoothing, marker strictness, smallest region |
+| Compare all | All of the above, with the three methods side by side |
 
 ## Results
 
@@ -54,6 +66,7 @@ No method was best on every image. See the [full report](docs/report_draft.md).
 | `src/watershed_segmentation.py` | Marker-based watershed |
 | `src/segmentation_studio.py` | Runs, times, displays and compares all methods |
 | `src/utils.py` | Shared interface, image helpers, timing and mocks |
+| `app.py`, `templates/index.html` | Browser interface |
 | `demo.py` | Command-line demo |
 | `tests/` | Automated tests and shared test images |
 | `docs/` | Report, demo script and contribution table |

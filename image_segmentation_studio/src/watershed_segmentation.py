@@ -11,9 +11,9 @@ MIN_EDGE_DISTANCE = 2.0  # a seed must be at least this far from an edge (pixels
 MIN_REGION_FRACTION = 0.004  # regions smaller than this share of the image are removed
 
 
-def smooth_image(image):
+def smooth_image(image, colour_radius=COLOUR_RADIUS):
     """Flatten texture and small highlights while keeping object edges sharp."""
-    smooth = cv2.pyrMeanShiftFiltering(image, SPATIAL_RADIUS, COLOUR_RADIUS)
+    smooth = cv2.pyrMeanShiftFiltering(image, SPATIAL_RADIUS, colour_radius)
     return cv2.medianBlur(smooth, MEDIAN_SIZE)
 
 
@@ -36,7 +36,7 @@ def find_edges(smooth):
     return edges
 
 
-def find_markers(edges):
+def find_markers(edges, peak_ratio=PEAK_RATIO):
     """
     Place one starting marker near the centre of each area enclosed by edges.
 
@@ -52,7 +52,7 @@ def find_markers(edges):
         (PEAK_WINDOW, PEAK_WINDOW)
     )
     local_peak = cv2.dilate(distance, window)
-    seeds = (distance >= PEAK_RATIO * local_peak) & (distance > MIN_EDGE_DISTANCE)
+    seeds = (distance >= peak_ratio * local_peak) & (distance > MIN_EDGE_DISTANCE)
 
     _, markers = cv2.connectedComponents(seeds.astype(np.uint8))
 
@@ -70,12 +70,16 @@ def remove_small_markers(labels, markers, min_area):
     return np.where(np.isin(markers, keep), markers, 0).astype(np.int32)
 
 
-def segment_watershed(image):
+def segment_watershed(image, colour_radius=COLOUR_RADIUS, peak_ratio=PEAK_RATIO,
+                      min_region_fraction=MIN_REGION_FRACTION):
     """
     Apply marker-based watershed segmentation.
 
     Args:
         image: Input BGR colour image (uint8).
+        colour_radius: Higher values smooth more, so fewer edges remain.
+        peak_ratio: Higher values make markers smaller, which splits regions more.
+        min_region_fraction: Regions below this share of the image are removed.
 
     Returns:
         labels: int32 label map of the same height and width. Each region has
@@ -87,8 +91,8 @@ def segment_watershed(image):
     if image.ndim != 3 or image.shape[2] != 3 or image.dtype != np.uint8:
         raise ValueError("Input must be a uint8 BGR colour image.")
 
-    smooth = smooth_image(image)
-    markers = find_markers(find_edges(smooth))
+    smooth = smooth_image(image, colour_radius)
+    markers = find_markers(find_edges(smooth), peak_ratio)
 
     # Without any marker there is nothing to flood from: one region only.
     if markers.max() == 0:
@@ -96,7 +100,7 @@ def segment_watershed(image):
 
     # First flood finds the regions, second floods again without the tiny ones.
     labels = cv2.watershed(smooth, markers.copy())
-    min_area = MIN_REGION_FRACTION * image.shape[0] * image.shape[1]
+    min_area = min_region_fraction * image.shape[0] * image.shape[1]
     markers = remove_small_markers(labels, markers, min_area)
 
     return cv2.watershed(smooth, markers)

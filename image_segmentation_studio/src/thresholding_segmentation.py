@@ -20,13 +20,14 @@ def convert_to_grayscale(image):
     return gray
 
 
-def otsu_thresholding(image, apply_blur=False):
+def otsu_thresholding(image, apply_blur=False, blur_size=5):
     """
     Apply Otsu's automatic thresholding.
 
     Args:
         image: Input colour or grayscale image.
         apply_blur: Apply Gaussian blur before thresholding if True.
+        blur_size: Width and height of the blur kernel (an odd number).
 
     Returns:
         threshold_value: Automatically selected threshold.
@@ -35,7 +36,7 @@ def otsu_thresholding(image, apply_blur=False):
     gray = convert_to_grayscale(image)
 
     if apply_blur:
-        gray = cv2.GaussianBlur(gray, (5, 5), 0)
+        gray = cv2.GaussianBlur(gray, (blur_size, blur_size), 0)
 
     threshold_value, segmented_image = cv2.threshold(
         gray,

@@ -28,12 +28,16 @@ def load_image(path, max_side=None):
     img = cv2.imread(path, cv2.IMREAD_COLOR)
     if img is None:
         raise FileNotFoundError(f"Cannot read image: {path}")
-    if max_side:
-        h, w = img.shape[:2]
-        scale = max_side / max(h, w)
-        if scale < 1:
-            img = cv2.resize(img, (int(w * scale), int(h * scale)),
-                             interpolation=cv2.INTER_AREA)
+    return limit_size(img, max_side) if max_side else img
+
+
+def limit_size(img, max_side):
+    """Downscale an image so its longest side is at most max_side."""
+    h, w = img.shape[:2]
+    scale = max_side / max(h, w)
+    if scale < 1:
+        img = cv2.resize(img, (int(w * scale), int(h * scale)),
+                         interpolation=cv2.INTER_AREA)
     return img
 
 
