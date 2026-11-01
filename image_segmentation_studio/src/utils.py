@@ -6,10 +6,11 @@ Agreed function interface for every segmentation module:
         image_bgr : uint8 image, shape (H, W, 3), BGR order (OpenCV)
         returns   : uint8 image, same H x W, either
                     - (H, W, 3) BGR visualisation of the segmentation, or
-                    - (H, W) single-channel mask (0/255 or labels)
+                    - (H, W) uint8 single-channel mask (0/255), or
+                    - (H, W) int32 label map (-1 marks boundaries)
 
 The studio converts whatever comes back into a displayable BGR image,
-so members only need to respect H x W and uint8 / label values.
+so members only need to respect H x W and these value types.
 """
 import os
 import time
@@ -85,6 +86,8 @@ def colorize_labels(labels):
 def count_regions(result):
     """Rough number of distinct regions/colours in a result (for the table)."""
     arr = np.asarray(result)
+    if arr.ndim == 2 and arr.dtype != np.uint8:  # label map: -1 is not a region
+        return len(np.unique(arr[arr != -1]))
     n = len(np.unique(arr.reshape(-1, arr.shape[2]), axis=0)) if arr.ndim == 3 \
         else len(np.unique(arr))
     # Photos with overlaid contours have thousands of colours: not a region count.

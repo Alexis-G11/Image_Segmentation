@@ -56,6 +56,13 @@ def segment_otsu(image, apply_blur=False):
     return segmented_image
 
 
+def segment_otsu_blur(image):
+    """
+    Studio interface: Otsu thresholding after Gaussian blur.
+    """
+    return segment_otsu(image, apply_blur=True)
+
+
 def manual_thresholding(image, threshold=127):
     """
     Apply binary thresholding using a manually selected threshold.

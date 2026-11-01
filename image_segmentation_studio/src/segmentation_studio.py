@@ -29,6 +29,8 @@ METHOD_SPECS = [
     ("Otsu threshold", "thresholding_segmentation",
      ["segment_otsu", "segment_threshold", "otsu_threshold", "segment"],
      utils.mock_threshold),
+    ("Otsu+blur", "thresholding_segmentation",
+     ["segment_otsu_blur"], utils.mock_threshold),
     ("Watershed", "watershed_segmentation",
      ["segment_watershed", "watershed_segmentation", "segment"],
      utils.mock_watershed),
@@ -94,7 +96,7 @@ class ImageSegmentationStudio:
         stem = os.path.splitext(os.path.basename(path))[0]
         if save:
             for name, r in results.items():
-                tag = name.split()[0].lower().replace("-", "")
+                tag = name.split()[0].lower().replace("-", "").replace("+", "_")
                 utils.save_image(os.path.join(self.output_dir, stem, f"{stem}_{tag}.png"),
                                  r["image"])
         fig_path = os.path.join(self.output_dir, stem, f"{stem}_comparison.png")
@@ -127,7 +129,8 @@ class ImageSegmentationStudio:
         axes[0].set_title("Original", fontsize=11)
         for ax, (name, r) in zip(axes[1:], results.items()):
             ax.imshow(cv2.cvtColor(r["image"], cv2.COLOR_BGR2RGB))
-            label = f"{name}\n{r['seconds'] * 1000:.1f} ms | {r['regions']} regions"
+            regions = f"{r['regions']} regions" if r["regions"] else "regions N/A"
+            label = f"{name}\n{r['seconds'] * 1000:.1f} ms | {regions}"
             if r["mock"]:
                 label += "\n[MOCK result]"
             if r["error"]:
@@ -135,8 +138,8 @@ class ImageSegmentationStudio:
             ax.set_title(label, fontsize=10)
         for ax in axes:
             ax.axis("off")
-        fig.suptitle(f"Image Segmentation Studio - {title}", fontsize=13, y=1.0)
         fig.tight_layout()
+        fig.suptitle(f"Image Segmentation Studio - {title}", fontsize=13, y=1.1)
         if save_path:
             utils.ensure_dir(os.path.dirname(save_path))
             fig.savefig(save_path, dpi=130, bbox_inches="tight")
@@ -151,7 +154,7 @@ class ImageSegmentationStudio:
         for fname, res in all_results.items():
             for name, r in res.items():
                 rows.append([fname, name, f"{r['seconds'] * 1000:.2f}",
-                             r["regions"], "mock" if r["mock"] else "real"])
+                             r["regions"] or "N/A", "mock" if r["mock"] else "real"])
         return rows
 
     def table_text(self, all_results):
