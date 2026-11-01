@@ -6,19 +6,7 @@ import time
 from pathlib import Path
 
 
-def kmeans_segmentation(image_path, image_name):
-
-    project_dir = Path(__file__).resolve().parent.parent
-    input_path = Path(image_path)
-    if not input_path.is_absolute() and not input_path.is_file():
-        input_path = project_dir / "tests" / "test_images" / input_path
-
-    image = cv2.imread(str(input_path))
-    if image is None:
-        raise FileNotFoundError(f"Could not read image: {input_path}")
-
-    # Convert BGR to RGB for display
-    original = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+def cluster_pixels(image, K=3):
 
     # Reshape pixels into a 2D array
     pixels = image.reshape((-1, 3))
@@ -34,12 +22,6 @@ def kmeans_segmentation(image_path, image_name):
         0.2
     )
 
-    # Set K = 3
-    K = 3
-
-    # Apply K-means and measure time
-    start = time.perf_counter()
-
     compactness, labels, centers = cv2.kmeans(
         pixels,
         K,
@@ -49,14 +31,45 @@ def kmeans_segmentation(image_path, image_name):
         cv2.KMEANS_PP_CENTERS
     )
 
-    end = time.perf_counter()
-
     # Replace pixels with cluster colours
     centers = np.uint8(centers)
     segmented = centers[labels.flatten()]
 
     #  Reconstruct the image
     segmented = segmented.reshape(image.shape)
+
+    return segmented, compactness
+
+
+def segment_kmeans(image, k=3):
+    """Studio interface: BGR image in, segmented BGR image of the same size out."""
+    segmented, _ = cluster_pixels(image, k)
+    return segmented
+
+
+def kmeans_segmentation(image_path, image_name):
+
+    project_dir = Path(__file__).resolve().parent.parent
+    input_path = Path(image_path)
+    if not input_path.is_absolute() and not input_path.is_file():
+        input_path = project_dir / "tests" / "test_images" / input_path
+
+    image = cv2.imread(str(input_path))
+    if image is None:
+        raise FileNotFoundError(f"Could not read image: {input_path}")
+
+    # Convert BGR to RGB for display
+    original = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    # Set K = 3
+    K = 3
+
+    # Apply K-means and measure time
+    start = time.perf_counter()
+
+    segmented, compactness = cluster_pixels(image, K)
+
+    end = time.perf_counter()
 
     # Convert result to RGB
     segmented_rgb = cv2.cvtColor(
@@ -94,11 +107,12 @@ def kmeans_segmentation(image_path, image_name):
     print("Comparison preview:", preview_path)
 
 
-# IMAGE 1: APPLE
-kmeans_segmentation("apple.jpg", "Apple")
+if __name__ == "__main__":
+    # IMAGE 1: APPLE
+    kmeans_segmentation("apple.jpg", "Apple")
 
-# IMAGE 2: ORANGE
-kmeans_segmentation("orange.jpg", "Orange")
+    # IMAGE 2: ORANGE
+    kmeans_segmentation("orange.jpg", "Orange")
 
-# IMAGE 3: COLOURED BALLS
-kmeans_segmentation("colored_balls.jpg", "Coloured Balls")
+    # IMAGE 3: COLOURED BALLS
+    kmeans_segmentation("colored_balls.jpg", "Coloured Balls")
