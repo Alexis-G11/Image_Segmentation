@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Image Segmentation Studio</title>
+<style>
+  :root {
+    --ink: #16202E; --muted: #4C5663; --paper: #F7F5EF; --card: #FFFFFF;
+    --tint: #EDE9DF; --line: #D9D4C7; --accent: #A8380A;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  header { background: var(--ink); color: var(--paper); padding: 16px 24px; }
+  h1 { margin: 0; font-size: 24px; }
+  header p { margin: 2px 0 0; color: #C9D2DC; font-size: 15px; }
+  main {
+    display: grid; grid-template-columns: 340px minmax(0, 1fr);
+    gap: 24px; padding: 24px; align-items: start;
+  }
+  aside { display: grid; gap: 20px; }
+  h2 {
+    margin: 0 0 8px; font-size: 13px; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  button, select, input { font: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .images { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .thumb {
+    padding: 0; border: 3px solid transparent; border-radius: 10px; overflow: hidden;
+    background: var(--tint); aspect-ratio: 1;
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb[aria-pressed="true"] { border-color: var(--accent); }
+  .upload {
+    display: block; margin-top: 10px; padding: 9px; text-align: center; cursor: pointer;
+    border: 1px dashed var(--muted); border-radius: 8px; font-weight: 600;
+  }
+  .upload input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .upload:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .methods { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .method {
+    padding: 11px 8px; font-weight: 600; color: var(--ink);
+    background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+  }
+  .method[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+
+  .options { display: grid; gap: 14px; }
+  fieldset {
+    margin: 0; padding: 14px; display: grid; gap: 14px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  }
+  legend { padding: 0 6px; font-weight: 700; }
+  label { display: grid; gap: 4px; font-size: 15px; }
+  .row { display: flex; justify-content: space-between; gap: 8px; }
+  .row output { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .hint { color: var(--muted); font-size: 13px; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); }
+  .check { display: flex; gap: 8px; align-items: center; }
+  .check input { accent-color: var(--accent); width: 18px; height: 18px; }
+  select { padding: 7px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); }
+  .reset {
+    padding: 9px; font-weight: 600; color: var(--ink);
+    background: transparent; border: 1px solid var(--muted); border-radius: 8px;
+  }
+  [hidden] { display: none !important; }
+
+  .explain { margin: 0 0 16px; font-size: 18px; }
+  .status { min-height: 24px; margin: 0 0 8px; color: var(--muted); font-weight: 600; }
+  .status.error { color: var(--accent); }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); transition: opacity .15s; }
+  .grid.busy { opacity: .55; }
+  figure { margin: 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  figure img { width: 100%; display: block; max-height: 62vh; object-fit: contain; background: var(--tint); }
+  figcaption { padding: 12px 14px; }
+  figcaption strong { display: block; font-size: 17px; }
+  .stats { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 820px) { main { grid-template-columns: minmax(0, 1fr); padding: 16px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Image Segmentation Studio</h1>
+  <p>Choose an image and a method, then adjust the options to see the result change.</p>
+</header>
+<main>
+  <aside>
+    <section>
+      <h2>1. Image</h2>
+      <div class="images" id="images">
+        {% for name in samples %}
+        <button class="thumb" data-image="{{ name }}" aria-pressed="false" aria-label="Use {{ name }}" title="{{ name }}">
+          <img src="/samples/{{ name }}" alt="">
+        </button>
+        {% endfor %}
+      </div>
+      <label class="upload">
+        Upload your own image
+        <input type="file" id="upload" accept="image/*">
+      </label>
+    </section>
+
+    <section>
+      <h2>2. Method</h2>
+      <div class="methods" id="methods">
+        <button class="method" data-method="kmeans" aria-pressed="false">K-means</button>
+        <button class="method" data-method="threshold" aria-pressed="false">Thresholding</button>
+        <button class="method" data-method="watershed" aria-pressed="false">Watershed</button>
+        <button class="method" data-method="compare" aria-pressed="false">Compare all</button>
+      </div>
+    </section>
+
+    <section class="options">
+      <h2>3. Options</h2>
+
+      <fieldset data-group="kmeans">
+        <legend>K-means</legend>
+        <label>
+          <span class="row">Number of clusters (K) <output for="k"></output></span>
+          <input type="range" id="k" min="2" max="12" step="1" value="3">
+          <span class="hint">More clusters keep more colours.</span>
+        </label>
+      </fieldset>
+
+      <fieldset data-group="threshold">
+        <legend>Thresholding</legend>
+        <label>
+          Threshold type
+          <select id="mode">
+            <option value="otsu">Otsu (automatic)</option>
+            <option value="manual">Manual</option>
+          </select>
+        </label>
+        <label id="threshold-control" hidden>
+          <span class="row">Threshold value (T) <output for="threshold"></output></span>
+          <input type="range" id="threshold" min="0" max="255" step="1" value="127">
+        </label>
+        <label class="check"><input type="checkbox" id="blur"> Apply Gaussian blur first</label>
+        <label id="blur-control" hidden>
+          <span class="row">Blur size <output for="blur_size"></output></span>
+          <input type="range" id="blur_size" min="3" max="31" step="2" value="5">
+          <span class="hint">Stronger blur removes specks but softens edges.</span>
+        </label>
+      </fieldset>
+
+      <fieldset data-group="watershed">
+        <legend>Watershed</legend>
+        <label>
+          <span class="row">Smoothing <output for="colour_radius"></output></span>
+          <input type="range" id="colour_radius" min="10" max="60" step="5" value="30">
+          <span class="hint">More smoothing leaves fewer edges.</span>
+        </label>
+        <label>
+          <span class="row">Marker strictness <output for="peak_ratio"></output></span>
+          <input type="range" id="peak_ratio" min="0.3" max="0.9" step="0.05" value="0.6">
+          <span class="hint">Stricter markers split regions more easily.</span>
+        </label>
+        <label>
+          <span class="row">Smallest region (% of image) <output for="min_region"></output></span>
+          <input type="range" id="min_region" min="0" max="3" step="0.1" value="0.4">
+          <span class="hint">Smaller regions, such as highlights, are removed.</span>
+        </label>
+      </fieldset>
+
+      <button class="reset" id="reset" type="button">Reset options</button>
+    </section>
+  </aside>
+
+  <section aria-live="polite">
+    <p class="explain" id="explain"></p>
+    <p class="status" id="status"></p>
+    <div class="grid" id="results"></div>
+  </section>
+</main>
+
+<script>
+  const EXPLAIN = {
+    kmeans: "K-means groups pixels by colour. It ignores position, so separate objects of a similar colour share one group.",
+    threshold: "Thresholding splits pixels into two groups by brightness. Otsu chooses the threshold automatically.",
+    watershed: "Watershed floods the image from markers and draws boundaries where floods meet, so it can separate touching objects.",
+    compare: "All three methods run on the same image with the chosen options, so you can compare them directly."
+  };
+  const OPTION_IDS = ["k", "mode", "threshold", "blur", "blur_size", "colour_radius", "peak_ratio", "min_region"];
+  const $ = id => document.getElementById(id);
+  const DEFAULTS = Object.fromEntries(OPTION_IDS.map(id => [id, $(id).type === "checkbox" ? $(id).checked : $(id).value]));
+
+  const state = { image: null, method: "kmeans" };
+  let latestRequest = 0, debounceTimer;
+
+  function press(selector, isActive) {
+    document.querySelectorAll(selector).forEach(el => el.setAttribute("aria-pressed", String(isActive(el))));
+  }
+
+  function readParams() {
+    return Object.fromEntries(OPTION_IDS.map(id => [id, $(id).type === "checkbox" ? $(id).checked : $(id).value]));
+  }
+
+  function refreshControls() {
+    document.querySelectorAll("fieldset[data-group]").forEach(group => {
+      group.hidden = state.method !== "compare" && group.dataset.group !== state.method;
+    });
+    $("threshold-control").hidden = $("mode").value !== "manual";
+    $("blur-control").hidden = !$("blur").checked;
+    document.querySelectorAll("output[for]").forEach(out => {
+      const id = out.getAttribute("for"), value = $(id).value;
+      out.textContent = id === "blur_size" ? `${value} x ${value}`
+        : id === "min_region" ? `${value}%` : value;
+    });
+    $("explain").textContent = EXPLAIN[state.method];
+  }
+
+  function figure(src, title, stats) {
+    const fig = document.createElement("figure");
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = title;
+    const caption = document.createElement("figcaption");
+    const heading = document.createElement("strong");
+    heading.textContent = title;
+    const line = document.createElement("span");
+    line.className = "stats";
+    stats.forEach(text => {
+      const item = document.createElement("span");
+      item.textContent = text;
+      line.append(item);
+    });
+    caption.append(heading, line);
+    fig.append(img, caption);
+    return fig;
+  }
+
+  function statsFor(result) {
+    const stats = [`${result.ms.toFixed(result.ms < 10 ? 2 : 0)} ms`];
+    stats.push(result.regions ? `${result.regions} regions` : "Regions: N/A");
+    if (result.detail) stats.push(result.detail);
+    return stats;
+  }
+
+  async function run() {
+    const requestId = ++latestRequest;
+    const status = $("status"), grid = $("results");
+    status.className = "status";
+    status.textContent = "Processing…";
+    grid.classList.add("busy");
+    try {
+      const response = await fetch("/api/segment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: state.image, method: state.method, params: readParams() })
+      });
+      const data = await response.json();
+      if (requestId !== latestRequest) return;  // a newer change is already running
+      if (!response.ok) throw new Error(data.error || "Something went wrong.");
+      grid.replaceChildren(
+        figure(data.original, "Original", ["Input image"]),
+        ...data.results.map(result => figure(result.image, result.name, statsFor(result)))
+      );
+      status.textContent = "";
+    } catch (error) {
+      if (requestId !== latestRequest) return;
+      status.className = "status error";
+      status.textContent = error.message === "Failed to fetch"
+        ? "The server has stopped. Run python app.py again, then reload this page."
+        : error.message;
+    }
+    grid.classList.remove("busy");
+  }
+
+  function scheduleRun() {
+    refreshControls();
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(run, 150);
+  }
+
+  function selectImage(id) {
+    state.image = id;
+    press(".thumb", el => el.dataset.image === id);
+  }
+
+  $("images").addEventListener("click", event => {
+    const button = event.target.closest(".thumb");
+    if (button) { selectImage(button.dataset.image); scheduleRun(); }
+  });
+
+  $("methods").addEventListener("click", event => {
+    const button = event.target.closest(".method");
+    if (!button) return;
+    state.method = button.dataset.method;
+    press(".method", el => el.dataset.method === state.method);
+    scheduleRun();
+  });
+
+  OPTION_IDS.forEach(id => $(id).addEventListener("input", scheduleRun));
+
+  $("reset").addEventListener("click", () => {
+    OPTION_IDS.forEach(id => {
+      if ($(id).type === "checkbox") $(id).checked = DEFAULTS[id];
+      else $(id).value = DEFAULTS[id];
+    });
+    scheduleRun();
+  });
+
+  $("upload").addEventListener("change", async event => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const form = new FormData();
+    form.append("image", file);
+    const status = $("status");
+    status.className = "status";
+    status.textContent = "Uploading…";
+    try {
+      const response = await fetch("/api/upload", { method: "POST", body: form });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "The upload failed.");
+      const button = document.createElement("button");
+      button.className = "thumb";
+      button.dataset.image = data.id;
+      button.setAttribute("aria-label", `Use ${data.name}`);
+      button.title = data.name;
+      const img = document.createElement("img");
+      img.src = data.thumb;
+      img.alt = "";
+      button.append(img);
+      $("images").append(button);
+      selectImage(data.id);
+      scheduleRun();
+    } catch (error) {
+      status.className = "status error";
+      status.textContent = error.message;
+    }
+    event.target.value = "";
+  });
+
+  const first = document.querySelector('.thumb[data-image*="balls"]') || document.querySelector(".thumb");
+  press(".method", el => el.dataset.method === state.method);
+  if (first) { selectImage(first.dataset.image); scheduleRun(); }
+  else { refreshControls(); $("status").textContent = "No images found. Upload one to begin."; }
+</script>
+</body>
+</html>
