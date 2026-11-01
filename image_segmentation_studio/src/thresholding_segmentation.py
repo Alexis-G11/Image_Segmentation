@@ -47,6 +47,15 @@ def otsu_thresholding(image, apply_blur=False):
     return threshold_value, segmented_image
 
 
+def segment_otsu(image, apply_blur=False):
+    """
+    Studio interface: return only the binary image from Otsu thresholding.
+    """
+    _, segmented_image = otsu_thresholding(image, apply_blur)
+
+    return segmented_image
+
+
 def manual_thresholding(image, threshold=127):
     """
     Apply binary thresholding using a manually selected threshold.

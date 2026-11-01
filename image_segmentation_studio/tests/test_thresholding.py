@@ -4,6 +4,7 @@ import pytest
 
 from src.thresholding_segmentation import (
     otsu_thresholding,
+    segment_otsu,
     manual_thresholding
 )
 
@@ -36,6 +37,16 @@ def test_otsu_with_gaussian_blur():
     threshold, result = otsu_thresholding(image, apply_blur=True)
 
     assert result.shape == image.shape
+    assert set(np.unique(result)).issubset({0, 255})
+
+
+def test_segment_otsu_returns_only_the_image():
+    image = np.zeros((100, 100, 3), dtype=np.uint8)
+    image[:, 50:] = (255, 255, 255)
+
+    result = segment_otsu(image)
+
+    assert result.shape == image.shape[:2]
     assert set(np.unique(result)).issubset({0, 255})
 
 
